@@ -1,6 +1,6 @@
-const { create, getUserById, getUsers, updateUser, deleteUser } = require("./user_service")
+const { create, getUserById, getUsers, updateUser, deleteUser, getUserByEmail } = require("./user_service")
 const { genSaltSync, hashSync, compareSync } = require("bcrypt")
-
+const { sign } = require("jsonwebtoken")
 module.exports = {
     createUser: (req, res) => {
         const body = req.body;
@@ -92,4 +92,38 @@ module.exports = {
             })
         });
     },
+
+    login: (req, res) => {
+        const body = req.body;
+        getUserByEmail(body.email, (err, results) => {
+            if (err) {
+                console.log(err)
+            }
+            if (!results) {
+                return res.json({
+                    success: 0,
+                    data: "invalid email or password "
+                })
+            }
+            const
+                result = compareSync(body.password, results.password)
+            if (result) {
+                result.password = undefined;
+                const jsontoken = sign({ result: results }, "qwe1234", {
+                    expiresIn: "1h"
+                })
+                return res.json({
+                    success: 1,
+                    message: "login successfully",
+                    token: jsontoken
+                })
+            }
+            else {
+                return res.json({
+                    success: 0,
+                    data: "invalid email or password"
+                })
+            }
+        })
+    }
 }
